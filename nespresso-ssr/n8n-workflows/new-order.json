@@ -1,0 +1,166 @@
+{
+  "name": "N-Coffee: Новый заказ",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "new-order",
+      "path": "new-order",
+      "responseMode": "responseNode",
+      "httpMethod": "POST"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "purchase",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Filter: Purchase",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.body.data;\nconst items = data.items || [];\n\nconst itemsList = items.map(i => `- ${i.title} x${i.count} = ${i.total}₽`).join('\\n');\n\nreturn [{\n  json: {\n    clientId: $json.body.clientId,\n    orderId: data.orderId,\n    total: data.total,\n    email: data.email,\n    phone: data.phone,\n    itemsList,\n    itemCount: items.length\n  }\n}];"
+      },
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "sendOptions": {},
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🎉 НОВЫЙ ЗАКАЗ!\\n\\n📋 Заказ #{{ $json.orderId }}\\n💰 Сумма: {{ $json.total }}₽\\n📦 Товаров: {{ $json.itemCount }}\\n\\n📧 {{ $json.email || 'нет email' }}\\n📱 {{ $json.phone || 'нет телефона' }}\\n\\nТовары:\\n{{ $json.itemsList }}",
+        "additionalFields": {}
+      },
+      "name": "Telegram: New Order",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "to": "={{ $json.email }}",
+        "subject": "=Ваш заказ #{{ $json.orderId }} принят — N-Coffee",
+        "text": "=Здравствуйте!\\n\\nВаш заказ #{{ $json.orderId }} на сумму {{ $json.total }}₽ успешно оформлен.\\n\\nМы свяжемся с вами для подтверждения доставки.\\n\\nСпасибо за покупку!\\nN-Coffee",
+        "options": {}
+      },
+      "name": "Email: Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [850, 400],
+      "credentials": {
+        "smtp": {
+          "id": "YOUR_SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter: Purchase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Purchase": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Telegram: New Order",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email: Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: New Order": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email: Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

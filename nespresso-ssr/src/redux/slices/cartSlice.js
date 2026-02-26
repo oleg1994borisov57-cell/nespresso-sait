@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import CoffeeService from "../../services/CoffeeService";
+import {
+  trackAddToCart,
+  trackRemoveFromCart,
+  trackBeginCheckout,
+  trackPurchase,
+  updateCartActivity,
+} from "../../utils/n8n";
 
 const initialState = {
   pages:
@@ -146,6 +153,16 @@ const cartSlice = createSlice({
         color,
       } = action.payload;
 
+      // N8N: трекинг добавления в корзину
+      if (+count > 0) {
+        trackAddToCart(
+          { id, title, price, category: cartPageName },
+          +count,
+          state.cartTotalPrice + price * count
+        );
+        updateCartActivity();
+      }
+
       let productIndex = null;
 
       const currPage = state.pages[cartPageName];
@@ -260,6 +277,13 @@ const cartSlice = createSlice({
       const product = products.find((item) => item.id === id);
 
       if (product) {
+        // N8N: трекинг удаления из корзины
+        trackRemoveFromCart(
+          { id: product.id, title: product.title, price: product.price },
+          state.cartTotalPrice - product.total
+        );
+        updateCartActivity();
+
         const productCount = product.count;
         const productTotal = product.total;
 
@@ -301,8 +325,18 @@ const cartSlice = createSlice({
     },
     nextStep: (state) => {
       state.step += 1;
-      console.log(state.step);
       localStorage.setItem("step", JSON.stringify(state.step));
+
+      // N8N: начало оформления заказа (на шаге 1)
+      if (state.step === 1) {
+        const cartItems = Object.values(state.pages)
+          .flatMap((page) => page.products)
+          .filter((p) => p.count > 0);
+        trackBeginCheckout(
+          cartItems,
+          state.cartTotalPrice
+        );
+      }
     },
     prevStep: (state) => {
       if (state.step !== 0) {
@@ -339,6 +373,18 @@ const cartSlice = createSlice({
     builder.addCase(sendDeliveryInfo.fulfilled, (state, action) => {
       state.status = "idle";
       state.orderNumber = action.payload;
+
+      // N8N: трекинг успешной покупки
+      const cartItems = Object.values(state.pages)
+        .flatMap((page) => page.products)
+        .filter((p) => p.count > 0);
+      trackPurchase({
+        orderId: action.payload,
+        total: state.cartTotalPrice,
+        items: cartItems,
+        email: state.shippingAddress?.email,
+        phone: state.shippingAddress?.phone,
+      });
     });
     builder.addCase(sendDeliveryInfo.rejected, (state) => {
       state.status = "error";

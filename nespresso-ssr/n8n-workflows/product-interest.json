@@ -1,0 +1,177 @@
+{
+  "name": "N-Coffee: Повторный просмотр товара",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "product-viewed-twice",
+      "path": "product-viewed-twice",
+      "responseMode": "responseNode",
+      "httpMethod": "POST"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "product_viewed_twice",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Filter: Viewed Twice",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.body.data;\nreturn [{\n  json: {\n    clientId: $json.body.clientId,\n    productId: data.productId,\n    productName: data.productName,\n    price: data.price,\n    url: $json.body.url\n  }\n}];"
+      },
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "sendOptions": {},
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=👀 Клиент смотрит товар 2-й раз!\\n\\n📦 {{ $json.productName }}\\n💰 {{ $json.price }}₽\\n\\nКлиент заинтересован — пора предложить скидку или консультацию!\\n\\n🔗 {{ $json.url }}",
+        "additionalFields": {}
+      },
+      "name": "Telegram: Interest Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hours": 2
+            }
+          ]
+        }
+      },
+      "name": "Wait 2 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [850, 400],
+      "webhookId": "wait-product-reminder"
+    },
+    {
+      "parameters": {
+        "sendOptions": {},
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=⏰ Напоминание: клиент смотрел\\n\\n📦 {{ $json.productName }}\\n\\nПрошло 2 часа — можно написать персональное предложение!",
+        "additionalFields": {}
+      },
+      "name": "Telegram: Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1050, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter: Viewed Twice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Viewed Twice": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Interest Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait 2 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Interest Alert": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Hours": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

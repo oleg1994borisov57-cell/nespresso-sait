@@ -1,0 +1,132 @@
+{
+  "name": "N-Coffee: Брошенная корзина",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "abandoned-cart",
+      "path": "abandoned-cart",
+      "responseMode": "responseNode",
+      "httpMethod": "POST"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "abandoned_cart",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Filter: Abandoned Cart",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Проверяем, не оформил ли заказ за это время\nconst data = $json.body.data;\nconst items = data.items || [];\nconst cartTotal = data.cartTotal || 0;\n\n// Формируем список товаров\nconst itemsList = items.map(i => `- ${i.title} x${i.count} = ${i.total}₽`).join('\\n');\n\nreturn [{\n  json: {\n    clientId: $json.body.clientId,\n    abandonedMinutes: data.abandonedMinutes,\n    cartTotal,\n    itemsList,\n    itemCount: items.length,\n    url: $json.body.url\n  }\n}];"
+      },
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "sendOptions": {},
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🛒 Брошенная корзина!\\n\\n💰 Сумма: {{ $json.cartTotal }}₽\\n📦 Товаров: {{ $json.itemCount }}\\n⏱ Прошло: {{ $json.abandonedMinutes }} мин\\n\\nТовары:\\n{{ $json.itemsList }}\\n\\n🔗 {{ $json.url }}",
+        "additionalFields": {}
+      },
+      "name": "Telegram Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter: Abandoned Cart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Abandoned Cart": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Telegram Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

@@ -3,6 +3,8 @@ import ProductPage from "../../src/components/pages/productPage/ProductPage";
 import CoffeeService from "../../src/services/CoffeeService";
 import getCurrUrl from "../../src/utils/getCurrUrl";
 import { ProductPageJsonLd, BreadcrumbJsonLd } from "../../src/components/seo/JsonLd";
+import { trackProductView } from "../../src/utils/n8n";
+import { useEffect } from "react";
 
 const BASE_URL = "https://n-coffee.ru";
 
@@ -20,6 +22,16 @@ export default function Product({ singleProduct }) {
     singleProduct.title_tag && singleProduct.title_tag.length > 0
       ? singleProduct.title_tag
       : singleProduct.productName ?? "Nespresso";
+
+  // N8N: трекинг просмотра товара
+  useEffect(() => {
+    trackProductView({
+      id: singleProduct.id,
+      title: singleProduct.productName,
+      price: singleProduct.price,
+      category: "capsules",
+    });
+  }, [singleProduct.id]);
 
   return (
     <>
