@@ -1,0 +1,21 @@
+div.special article {
+  margin-bottom: 20px !important;
+  margin-top: 0px !important;
+  display: block;
+  width: calc((100% - 80px) / 3) !important;
+}
+
+div.special article > a {
+  display: flex !important;
+  width: 100% !important;
+  color: #000 !important;
+  flex-direction: column;
+  justify-content: space-between !important;
+  height: 100% !important;
+}
+
+@media screen and (max-width: 995px) {
+  div.special article > a {
+    flex-direction: row;
+  }
+}

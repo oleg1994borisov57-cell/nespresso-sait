@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /_next/
+
+Sitemap: https://nestle-nespresso.ru/sitemap.xml

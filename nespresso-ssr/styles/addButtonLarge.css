@@ -1,0 +1,178 @@
+#largeBtnWrapper .AddToBagButton {
+  outline: none;
+}
+
+#largeBtnWrapper {
+  position: relative;
+  display: inline-block;
+  @media (max-width: 997px) {
+    display: block;
+  }
+}
+
+#largeBtnWrapper .AddToBagButtonLarge {
+  min-width: 210px;
+  border: 1px solid #3d8705;
+  background-color: #3d8705;
+  color: #fff;
+  padding: 0.8em 2.5em;
+  width: 255px;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-family: Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans,
+    Tahoma, sans-serif;
+  line-height: 1.2em;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+  text-align: center;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#largeBtnWrapper .AddToBagButtonLarge.active {
+  border: 1px solid #326e04;
+  background-color: #326e04;
+}
+#largeBtnWrapper .AddToBagButtonLarge .AddToBagButtonLarge__basketIcon {
+  position: absolute;
+  left: 5px;
+  top: 3px;
+  font-size: 1.875rem;
+}
+
+#largeBtnWrapper .AddToBagButtonLarge:hover:not(:disabled) {
+  box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.3);
+}
+#largeBtnWrapper .AddToBagButtonLarge:disabled {
+  border: 1px solid #eee;
+  color: #656565;
+  cursor: not-allowed;
+  background-color: #eee;
+  box-shadow: none;
+}
+
+#largeBtnWrapper .QuantitySelector {
+  letter-spacing: normal;
+  font-weight: 400;
+}
+
+#largeBtnWrapper .QuantitySelector__popin {
+  padding: 0.625rem;
+  width: 13.25rem;
+  font-size: 0.75rem;
+  background-color: #f9f9f9;
+  color: #2e2e2e;
+  border: 1px solid #d5d5d5;
+  border-radius: 2px;
+}
+
+#largeBtnWrapper .QuantitySelector__popin--top {
+  right: 50%;
+  transform: translate(50%, -100%);
+  top: -1.875rem;
+}
+
+#largeBtnWrapper .QuantitySelector .QuantitySelector__popin {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #2e2e2e;
+}
+
+#largeBtnWrapper .QuantitySelector .QuantitySelector__popin::before {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 10px solid;
+  border-color: #d5d5d5;
+  border-right-color: transparent;
+  border-left-color: transparent;
+  left: calc(50% - 10px);
+  border-bottom-width: 0;
+  bottom: -11px;
+}
+
+#largeBtnWrapper .QuantitySelector .QuantitySelector__popin--top::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 10px solid;
+  border-color: #f9f9f9;
+  border-right-color: transparent;
+  border-left-color: transparent;
+  left: calc(50% - 10px);
+  border-bottom-width: 0;
+  bottom: -10px;
+}
+
+@media screen and (max-width: 997px) {
+  #largeBtnWrapper .AddToBagButtonLarge {
+    width: 100%;
+  }
+}
+
+#largeBtnWrapper .QuantitySelector__popidiv {
+  font-family: NespressoLucas;
+}
+
+@media screen and (max-width: 996px) {
+  #largeBtnWrapper .QuantitySelector .QuantitySelector__popin::before {
+    display: none !important;
+  }
+}
+
+#largeBtnWrapper .AddToBagButtonLarge__label {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+#largeBtnWrapper .AddToBagButtonLarge__plusIcon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 1.125rem;
+}
+
+#largeBtnWrapper .Glyph--basket:before {
+  content: "\F10C";
+}
+
+#largeBtnWrapper .Glyph {
+  line-height: 1;
+}
+
+#largeBtnWrapper .VisuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+#largeBtnWrapper .Glyph:before {
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#largeBtnWrapper .Glyph:before {
+  font-family: Crema Glyphs !important;
+  font-style: normal;
+  font-weight: 400 !important;
+  vertical-align: top;
+}
+
+#largeBtnWrapper .Glyph--plus:before {
+  content: "\F135";
+}
