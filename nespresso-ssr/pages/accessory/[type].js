@@ -2,6 +2,9 @@ import Head from "next/head";
 import CoffeeService from "../../src/services/CoffeeService";
 import AccessoryProductPage from "../../src/components/pages/accessoryProductPage/AccessoryProductPage";
 import getCurrUrl from "../../src/utils/getCurrUrl";
+import { BreadcrumbJsonLd } from "../../src/components/seo/JsonLd";
+
+const BASE_URL = "https://n-coffee.ru";
 
 const { getAllAccessoriesProductsIds, getAccessoryProduct } =
   new CoffeeService();
@@ -29,6 +32,14 @@ export default function Accessory({ singleProduct }) {
         />
         <meta property="og:image" content={singleProduct.img} />
       </Head>
+
+      {/* JSON-LD для хлебных крошек аксессуара */}
+      <BreadcrumbJsonLd items={[
+        { name: "Главная", url: BASE_URL },
+        { name: "Аксессуары", url: `${BASE_URL}/accessories` },
+        { name: singleProduct.title, url: `${BASE_URL}/accessory/${singleProduct.id}` }
+      ]} />
+
       <AccessoryProductPage product={singleProduct} />
     </>
   );

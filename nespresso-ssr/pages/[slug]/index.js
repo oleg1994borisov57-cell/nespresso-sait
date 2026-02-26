@@ -1,9 +1,14 @@
 import { useRouter } from "next/router";
+import Head from "next/head";
 
 import CoffeeService from "../../src/services/CoffeeService";
 import getPageContent from "../../lib/getPageContent";
 import getCurrPathProps from "../../lib/getPathProps";
 import { unsupportedUrls } from "../../src/config/dynamicPages.config";
+import { OrganizationJsonLd, WebsiteJsonLd, BreadcrumbJsonLd } from "../../src/components/seo/JsonLd";
+import getCurrUrl from "../../src/utils/getCurrUrl";
+
+const BASE_URL = "https://n-coffee.ru";
 
 const { getAllPages } = new CoffeeService();
 
@@ -24,7 +29,27 @@ export default function DynamicPage({
   if ((id, title)) {
     const content = getPageContent(id, title, description, type, path, values);
 
-    return <>{content}</>;
+    return (
+      <>
+        <Head>
+          <meta name="description" content={description} />
+          <title>{title}</title>
+          <link rel="canonical" href={`${getCurrUrl().url}/${path}`} />
+        </Head>
+
+        {/* JSON-LD разметка */}
+        <OrganizationJsonLd />
+        <WebsiteJsonLd />
+
+        {/* JSON-LD для хлебных крошек категории */}
+        <BreadcrumbJsonLd items={[
+          { name: "Главная", url: BASE_URL },
+          { name: title, url: `${BASE_URL}/${path}` }
+        ]} />
+
+        {content}
+      </>
+    );
   }
 }
 

@@ -3,6 +3,9 @@ import MachineProductPage from "../../src/components/pages/machineProductPage/Ma
 
 import CoffeeService from "../../src/services/CoffeeService";
 import getCurrUrl from "../../src/utils/getCurrUrl";
+import { BreadcrumbJsonLd } from "../../src/components/seo/JsonLd";
+
+const BASE_URL = "https://n-coffee.ru";
 
 const { getAllMachineProductsIds, getMachineProduct } = new CoffeeService();
 
@@ -28,6 +31,14 @@ export default function Product({ currProduct, variants, breadcrumbs }) {
         />
         <meta property="og:image" content={currProduct.productImg} />
       </Head>
+
+      {/* JSON-LD для хлебных крошек кофемашины */}
+      <BreadcrumbJsonLd items={[
+        { name: "Главная", url: BASE_URL },
+        { name: "Кофемашины", url: `${BASE_URL}/machines` },
+        { name: currProduct.title, url: `${BASE_URL}/machine/${currProduct.product_id}` }
+      ]} />
+
       <MachineProductPage
         breadcrumbs={breadcrumbs}
         currProduct={currProduct}

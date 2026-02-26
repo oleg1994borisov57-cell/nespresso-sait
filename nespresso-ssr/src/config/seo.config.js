@@ -160,8 +160,26 @@ export const categorySeoData = {
   },
 };
 
-// Дефолтные OG изображения (placeholder)
+// Дефолтные OG изображения (PLACEHOLDER - заменить на реальные!)
+// Размеры: 1200x630 px (рекомендовано Facebook/OpenGraph)
+// Формат: JPG или PNG
+// Размер файла: < 8MB
+
 export const defaultOgImage = "https://n-coffee.ru/images/og-default.jpg";
+// TODO: ЗАМЕНИТЬ - загрузить реальное изображение 1200x630
+// Путь: public/images/og-default.jpg
+
+// OG изображения для категорий (PLACEHOLDER)
+export const categoryOgImages = {
+  capsules: "https://n-coffee.ru/images/og-capsules.jpg",
+  // TODO: ЗАМЕНИТЬ - public/images/og-capsules.jpg
+  
+  machines: "https://n-coffee.ru/images/og-machines.jpg",
+  // TODO: ЗАМЕНИТЬ - public/images/og-machines.jpg
+  
+  accessories: "https://n-coffee.ru/images/og-accessories.jpg",
+  // TODO: ЗАМЕНИТЬ - public/images/og-accessories.jpg
+};
 
 // Пути к OG изображениям для категорий
 export const categoryOgImages = {

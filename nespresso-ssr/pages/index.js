@@ -5,7 +5,9 @@ import CoffeeService from "../src/services/CoffeeService";
 
 import { urlsIds } from "../src/config/urlsIds.config";
 import getCurrUrl from "../src/utils/getCurrUrl";
-import { OrganizationJsonLd, WebsiteJsonLd } from "../src/components/seo/JsonLd";
+
+const BASE_URL = "https://n-coffee.ru";
+import { OrganizationJsonLd, WebsiteJsonLd, BreadcrumbJsonLd } from "../src/components/seo/JsonLd";
 
 const { getCategories, getProducts, getPageDetails } = new CoffeeService();
 
@@ -24,6 +26,9 @@ const Original = ({ preloadedCategories, title, description }) => {
       {/* JSON-LD разметка для организации и сайта */}
       <OrganizationJsonLd />
       <WebsiteJsonLd />
+
+      {/* JSON-LD для хлебных крошек — только главная */}
+      <BreadcrumbJsonLd items={[{ name: "Главная", url: BASE_URL }]} />
 
       <ShopPage page={page} categories={preloadedCategories} />
     </>

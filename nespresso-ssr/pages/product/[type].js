@@ -2,7 +2,9 @@ import Head from "next/head";
 import ProductPage from "../../src/components/pages/productPage/ProductPage";
 import CoffeeService from "../../src/services/CoffeeService";
 import getCurrUrl from "../../src/utils/getCurrUrl";
-import { ProductPageJsonLd } from "../../src/components/seo/JsonLd";
+import { ProductPageJsonLd, BreadcrumbJsonLd } from "../../src/components/seo/JsonLd";
+
+const BASE_URL = "https://n-coffee.ru";
 
 const { getSingleProduct, getAllProducts } = new CoffeeService();
 
@@ -47,6 +49,13 @@ export default function Product({ singleProduct }) {
         availability={singleProduct.inStock ? "InStock" : "OutOfStock"}
         url={`${getCurrUrl().url}/product/${singleProduct.id}`}
       />
+
+      {/* JSON-LD для хлебных крошек товара */}
+      <BreadcrumbJsonLd items={[
+        { name: "Главная", url: BASE_URL },
+        { name: "Капсулы", url: `${BASE_URL}/capsules` },
+        { name: singleProduct.productName, url: `${BASE_URL}/product/${singleProduct.id}` }
+      ]} />
 
       <ProductPage singleProduct={singleProduct} />
     </>
