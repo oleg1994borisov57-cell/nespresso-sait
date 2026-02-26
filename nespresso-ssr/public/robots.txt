@@ -1,3 +1,12 @@
 User-agent: *
 Allow: /
+
+# Запрет служебных страниц
+Disallow: /api/
+Disallow: /_next/
+Disallow: /404
+Disallow: /complete
+
+# Host и Sitemap
+Host: https://n-coffee.ru
 Sitemap: https://n-coffee.ru/sitemap.xml
