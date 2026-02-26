@@ -5,6 +5,7 @@ import CoffeeService from "../src/services/CoffeeService";
 
 import { urlsIds } from "../src/config/urlsIds.config";
 import getCurrUrl from "../src/utils/getCurrUrl";
+import { OrganizationJsonLd, WebsiteJsonLd } from "../src/components/seo/JsonLd";
 
 const { getCategories, getProducts, getPageDetails } = new CoffeeService();
 
@@ -19,6 +20,11 @@ const Original = ({ preloadedCategories, title, description }) => {
         <link rel="canonical" href={getCurrUrl().url} />
         <title>{title}</title>
       </Head>
+
+      {/* JSON-LD разметка для организации и сайта */}
+      <OrganizationJsonLd />
+      <WebsiteJsonLd />
+
       <ShopPage page={page} categories={preloadedCategories} />
     </>
   );

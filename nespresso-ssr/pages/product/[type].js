@@ -2,6 +2,7 @@ import Head from "next/head";
 import ProductPage from "../../src/components/pages/productPage/ProductPage";
 import CoffeeService from "../../src/services/CoffeeService";
 import getCurrUrl from "../../src/utils/getCurrUrl";
+import { ProductPageJsonLd } from "../../src/components/seo/JsonLd";
 
 const { getSingleProduct, getAllProducts } = new CoffeeService();
 
@@ -33,6 +34,20 @@ export default function Product({ singleProduct }) {
         <meta property="og:description" content={description} />
         <meta property="og:image" content={singleProduct.productImg} />
       </Head>
+
+      {/* JSON-LD разметка для товара */}
+      <ProductPageJsonLd
+        name={singleProduct.productName}
+        description={description}
+        image={singleProduct.productImg}
+        sku={singleProduct.id}
+        brand="Nespresso"
+        price={singleProduct.price}
+        currency="RUB"
+        availability={singleProduct.inStock ? "InStock" : "OutOfStock"}
+        url={`${getCurrUrl().url}/product/${singleProduct.id}`}
+      />
+
       <ProductPage singleProduct={singleProduct} />
     </>
   );
