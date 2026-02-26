@@ -104,6 +104,12 @@ export default function MyApp({ Component, pageProps, menuData }) {
         <meta property="og:url" content={getCurrUrl().url} />
         <meta property="og:type" content="website" />
         <meta name="theme-color" content="#000000" />
+        
+        {/* OpenGraph мета-теги для социальных сетей */}
+        <meta property="og:title" content="N-Coffee — капсулы Nespresso Original и Vertuo в России" />
+        <meta property="og:description" content="Купить оригинальные капсулы Nespresso с доставкой по РФ. Акции, подарки, быстрая доставка." />
+        {/* TODO: заменить на реальную OG-картинку (1200x630 px рекомендовано) */}
+        <meta property="og:image" content="https://n-coffee.ru/images/coffee-capsules-og.jpg" />
       </Head>
       <NextNProgress
         color="#29D"
