@@ -1,0 +1,354 @@
+{
+  "name": "N-Coffee: Напоминание менеджеру о клиенте",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "manager-reminder",
+      "path": "manager-reminder",
+      "responseMode": "responseNode",
+      "httpMethod": "POST"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "purchase",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Filter: Purchase",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.body.data;\nconst summary = data.summary || {};\n\n// Проверяем, есть ли капсулы\nconst capsules = data.items?.capsules || [];\nif (capsules.length === 0) {\n  return [{ json: { skip: true, reason: 'no_capsules' } }];\n}\n\n// Расчётные данные уже пришли из сайта\nconst reminderDelayDays = summary.reminderDelayDays || 17;\nconst reminderDate = summary.reminderDate;\nconst daysUntilEmpty = summary.daysUntilEmpty;\nconst estimatedEmptyDate = summary.estimatedEmptyDate;\n\n// Форматируем топ-3 вкуса для сообщения\nconst top3Text = summary.top3Flavors\n  ?.map((f, i) => `${i + 1}. ${f.title} × ${f.packs} уп.`)\n  .join('\\n') || '';\n\n// Формируем данные клиента\nconst customerData = {\n  customerName: data.customerName || 'Неизвестно',\n  phone: data.phone || 'Нет телефона',\n  email: data.email || 'Нет email',\n  address: data.address || '',\n  orderId: data.orderId,\n  orderDate: new Date($json.body.timestamp).toLocaleDateString('ru-RU'),\n  total: data.total,\n  totalPacksBought: summary.totalPacksBought,\n  totalPacksWithGifts: summary.totalPacksBought + (data.items?.gifts?.length || 0),\n  uniqueFlavors: summary.uniqueFlavors,\n  top3Flavors: summary.top3Flavors || [],\n  top3Text,\n  hasDecaf: summary.hasDecaf,\n  decafPacks: summary.decafPacks,\n  isLargeOrder: summary.isLargeOrder,\n  reminderDate,\n  daysUntilEmpty,\n  estimatedEmptyDate,\n  calculation: summary.calculation,\n};\n\nreturn [{\n  json: {\n    skip: false,\n    clientId: $json.body.clientId,\n    orderId: data.orderId,\n    reminderDelayDays,\n    reminderDate,\n    customerData,\n  }\n}];"
+      },
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Has Capsules?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXT_PUBLIC_SITE_URL }}/api/reminders",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\\n  \"clientId\": \"{{ $json.clientId }}\",\\n  \"orderId\": \"{{ $json.orderId }}\",\\n  \"reminderDate\": \"{{ $json.reminderDate }}\",\\n  \"customerData\": {{ JSON.stringify($json.customerData) }}\\n}",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+            }
+          ]
+        }
+      },
+      "name": "Save Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "days": "={{ $json.reminderDelayDays }}"
+            }
+          ]
+        }
+      },
+      "name": "Wait Until Reminder",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1250, 200],
+      "webhookId": "wait-manager-reminder"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.NEXT_PUBLIC_SITE_URL }}/api/reminder-check",
+        "sendQuery": true,
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "clientId",
+              "value": "={{ $json.clientId }}"
+            },
+            {
+              "name": "orderId",
+              "value": "={{ $json.orderId }}"
+            }
+          ]
+        },
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+            }
+          ]
+        }
+      },
+      "name": "Check Validity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.shouldSend }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Should Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1650, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.customerData;\n\n// Обычный формат (< 10 уп.)\nconst regularMessage = `‼️ ВНИМАНИЕ! Время связаться с клиентом\\n\\n👤 Клиент: ${data.customerName}\\n📞 Телефон: ${data.phone}\\n📧 Email: ${data.email}${data.address ? '\\n📍 Адрес: ' + data.address : ''}\\n\\n📦 Предыдущий заказ:\\n• Дата: ${data.orderDate}\\n• Товар: ${data.top3Flavors[0]?.title || 'Капсулы'} × ${data.totalPacksBought} уп.\\n• Сумма: ${data.total.toLocaleString('ru-RU')}₽\\n\\n⏰ Кофе заканчивается через ~3 дня (примерно ${data.estimatedEmptyDate})\\n\\n💡 Действие: Позвонить и предложить повторный заказ`;\n\n// Большой заказ (>= 10 уп.)\nconst largeOrderMessage = `‼️ ВНИМАНИЕ! Время связаться с клиентом\\n\\n👤 Клиент: ${data.customerName}\\n📞 Телефон: ${data.phone}\\n📧 Email: ${data.email}${data.address ? '\\n📍 Адрес: ' + data.address : ''}\\n\\n📦 Предыдущий заказ:\\n• Дата: ${data.orderDate}\\n• Всего: ${data.totalPacksBought} уп. куплено${data.items?.gifts?.length > 0 ? ' + ' + data.items.gifts.length + ' в подарок' : ''}\\n• Сумма: ${data.total.toLocaleString('ru-RU')}₽\\n\\n☕ Топ-3 вкуса:\\n${data.top3Text}\\n\\n⚠️ Большой заказ! Клиент возможно запасается или делится.\\n⏰ Расчётная дата окончания: ~${data.estimatedEmptyDate} (через 3 дня от напоминания)\\n\\n💡 Действие: Позвонить и предложить повторный заказ`;\n\nconst message = data.isLargeOrder ? largeOrderMessage : regularMessage;\n\nreturn [{\n  json: {\n    message,\n    customerData: data,\n  }\n}];"
+      },
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "sendOptions": {},
+        "chatId": "={{ $env.TELEGRAM_MANAGER_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [2050, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"reminderScheduled\": true}"
+      },
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"skipped\": true, \"reason\": \"no_capsules\"}"
+      },
+      "name": "Respond Skip",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Логируем пропуск напоминания\nconsole.log('Reminder skipped:', $json.reason, 'for order:', $json.customerData?.orderId);\nreturn [{ json: { logged: true } }];"
+      },
+      "name": "Log Skip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter: Purchase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Purchase": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Has Capsules?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Capsules?": {
+      "main": [
+        [
+          {
+            "node": "Save Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Reminder": {
+      "main": [
+        [
+          {
+            "node": "Wait Until Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until Reminder": {
+      "main": [
+        [
+          {
+            "node": "Check Validity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Validity": {
+      "main": [
+        [
+          {
+            "node": "Should Send?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send?": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

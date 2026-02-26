@@ -139,15 +139,130 @@ export const trackProductView = (product) => {
 
 /**
  * Покупка завершена
+ * Расширенная версия с данными для менеджерских напоминаний
  */
 export const trackPurchase = (orderData) => {
   sendN8NEvent("purchase", {
     orderId: orderData.orderId,
     total: orderData.total,
-    items: orderData.items,
     email: orderData.email,
     phone: orderData.phone,
+    customerName: orderData.customerName,
+    address: orderData.address,
+    items: orderData.items,
+    summary: orderData.summary,
   });
+};
+
+/**
+ * Рассчитать дату напоминания для менеджера
+ * @param {number} packsBought - куплено упаковок (без подарков)
+ * @param {boolean} isLargeOrder - большой заказ (>= 10 уп.)
+ * @returns {object} - дата напоминания и расчётные данные
+ */
+export const calculateManagerReminder = (packsBought, isLargeOrder = false) => {
+  const CAPS_PER_PACK = 10;
+  const DAILY_CONSUMPTION = 2.5;
+  const LARGE_ORDER_MULTIPLIER = 1.5;
+  const REMINDER_DAYS_BEFORE = 3;
+  const MIN_REMINDER_DAYS = 1;
+
+  const totalCaps = packsBought * CAPS_PER_PACK;
+  const dailyCups = isLargeOrder
+    ? DAILY_CONSUMPTION * LARGE_ORDER_MULTIPLIER
+    : DAILY_CONSUMPTION;
+  const daysUntilEmpty = totalCaps / dailyCups;
+  const reminderDelayDays = Math.max(
+    MIN_REMINDER_DAYS,
+    Math.floor(daysUntilEmpty - REMINDER_DAYS_BEFORE)
+  );
+
+  const reminderDate = new Date();
+  reminderDate.setDate(reminderDate.getDate() + reminderDelayDays);
+
+  return {
+    reminderDelayDays,
+    reminderDate: reminderDate.toISOString().split("T")[0],
+    daysUntilEmpty: Math.floor(daysUntilEmpty),
+    estimatedEmptyDate: new Date(Date.now() + daysUntilEmpty * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    calculation: {
+      totalCapsules: totalCaps,
+      dailyConsumption: dailyCups,
+      isLargeOrder,
+    },
+  };
+};
+
+/**
+ * Подготовить summary для напоминания менеджеру
+ * @param {array} items - товары в корзине
+ * @returns {object} - структурированные данные
+ */
+export const prepareManagerReminderSummary = (items) => {
+  const capsules = [];
+  const gifts = [];
+  const machines = [];
+
+  items.forEach((item) => {
+    const isGift =
+      item.isGift ||
+      item.price === 0 ||
+      (item.title && item.title.toLowerCase().includes("подарок"));
+
+    const itemData = {
+      title: item.title || item.productName,
+      packs: item.count || item.quantity || 1,
+      price: item.price,
+      isGift: !!isGift,
+    };
+
+    if (isGift) {
+      gifts.push(itemData);
+    } else if (item.category === "machines" || item.price > 20000) {
+      machines.push(itemData);
+    } else {
+      capsules.push(itemData);
+    }
+  });
+
+  const totalPacksBought = capsules.reduce((sum, item) => sum + item.packs, 0);
+  const totalCapsules = totalPacksBought * 10;
+  const isLargeOrder = totalPacksBought >= 10;
+
+  // Топ-3 вкуса по количеству
+  const top3Flavors = capsules
+    .filter((item) => !item.isGift)
+    .sort((a, b) => b.packs - a.packs)
+    .slice(0, 3)
+    .map((item) => ({ title: item.title, packs: item.packs }));
+
+  // Проверка на декаф
+  const decafItems = capsules.filter(
+    (item) =>
+      item.title.toLowerCase().includes("decaffeinato") ||
+      item.title.toLowerCase().includes("decaf") ||
+      item.title.toLowerCase().includes("декаф")
+  );
+  const decafPacks = decafItems.reduce((sum, item) => sum + item.packs, 0);
+
+  return {
+    items: {
+      capsules,
+      gifts,
+      machines,
+    },
+    summary: {
+      totalPacksBought,
+      totalCapsules,
+      uniqueFlavors: capsules.length,
+      top3Flavors,
+      hasDecaf: decafPacks > 0,
+      decafPacks,
+      isLargeOrder,
+    },
+  };
 };
 
 /**

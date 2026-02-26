@@ -6,6 +6,8 @@ import {
   trackBeginCheckout,
   trackPurchase,
   updateCartActivity,
+  prepareManagerReminderSummary,
+  calculateManagerReminder,
 } from "../../utils/n8n";
 
 const initialState = {
@@ -105,6 +107,20 @@ const {
   getOrderPrice: coffeeGetOrderPrice,
   sendDeliveryInfo: coffeeSendDeliveryInfo,
 } = new CoffeeService();
+
+/**
+ * Форматировать адрес доставки в строку
+ */
+const formatAddress = (shippingAddress) => {
+  if (!shippingAddress) return "";
+  const parts = [
+    shippingAddress.city,
+    shippingAddress.street && `ул ${shippingAddress.street}`,
+    shippingAddress.house && `д ${shippingAddress.house}`,
+    shippingAddress.apartment && `кв ${shippingAddress.apartment}`,
+  ].filter(Boolean);
+  return parts.join(", ");
+};
 
 export const getPaymentLink = createAsyncThunk(
   "cart/getPaymentLink",
@@ -374,16 +390,32 @@ const cartSlice = createSlice({
       state.status = "idle";
       state.orderNumber = action.payload;
 
-      // N8N: трекинг успешной покупки
+      // N8N: трекинг успешной покупки (расширенный)
       const cartItems = Object.values(state.pages)
         .flatMap((page) => page.products)
         .filter((p) => p.count > 0);
+
+      // Подготавливаем summary для менеджерских напоминаний
+      const { items, summary } = prepareManagerReminderSummary(cartItems);
+
+      // Рассчитываем дату напоминания
+      const reminderCalc = calculateManagerReminder(
+        summary.totalPacksBought,
+        summary.isLargeOrder
+      );
+
       trackPurchase({
         orderId: action.payload,
         total: state.cartTotalPrice,
-        items: cartItems,
         email: state.shippingAddress?.email,
         phone: state.shippingAddress?.phone,
+        customerName: state.shippingAddress?.name || state.shippingAddress?.fullName,
+        address: formatAddress(state.shippingAddress),
+        items,
+        summary: {
+          ...summary,
+          ...reminderCalc,
+        },
       });
     });
     builder.addCase(sendDeliveryInfo.rejected, (state) => {
